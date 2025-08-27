@@ -214,7 +214,6 @@ lockCheck:SetScript("OnClick", function(self)
 end)
 
 -- Slider Taille
--- Slider Taille
 local sizeSlider = CreateFrame("Slider", "TWPOptionsSizeSlider", TWPOptions, "OptionsSliderTemplate")
 sizeSlider:SetWidth(200)
 sizeSlider:SetHeight(16)
