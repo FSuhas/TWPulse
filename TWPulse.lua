@@ -145,26 +145,6 @@ TWP.animation:SetScript("OnUpdate", function()
 end)
 
 -------------------------------------------------
--- Slash Commands
--------------------------------------------------
-TWP.locked = true
-SLASH_TWPLOCK1 = "/twplock"
-SlashCmdList["TWPLOCK"] = function()
-    TWP.locked = true
-    TWPulseUnlock:Hide()
-    TWPulse:Hide()
-    TWPulse:EnableMouse(false)
-end
-
-SLASH_TWPUNLOCK1 = "/twpunlock"
-SlashCmdList["TWPUNLOCK"] = function()
-    TWP.locked = false
-    TWPulseUnlock:Show()
-    TWPulse:Show()
-    TWPulse:EnableMouse(true)
-end
-
--------------------------------------------------
 -- Helpers
 -------------------------------------------------
 function _tablesize(t)
