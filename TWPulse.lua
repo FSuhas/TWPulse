@@ -25,11 +25,26 @@ local TWP = CreateFrame("Frame")
 TWP:RegisterEvent("ADDON_LOADED")
 
 TWP:SetScript("OnEvent", function()
-    if event then
-        if event == "ADDON_LOADED" and arg1 == "TWPulse" then
-            TWPulse:EnableMouse(false)
-            TWP.scan:Show()
+    if event == "ADDON_LOADED" and arg1 == "TWPulse" then
+
+        if not TWPB_P then TWPB_P = 100 end  -- valeur par défaut si jamais la variable n’existe pas
+
+        -- Appliquer la taille sauvegardée
+        local size = TWPB_P
+        TWP.defaults = TWP.defaults or {}
+        TWP.defaults.size = size
+
+        TWPulse:SetWidth(size)
+        TWPulse:SetHeight(size)
+
+        if TWPulseUnlock then
+            TWPulseUnlock:SetWidth(size)
+            TWPulseUnlock:SetHeight(size)
         end
+
+        -- Activer le scan
+        TWPulse:EnableMouse(false)
+        TWP.scan:Show()
     end
 end)
 
@@ -40,23 +55,19 @@ TWP.tracked = {}
 -------------------------------------------------
 TWP.scan = CreateFrame("Frame")
 TWP.scan:Hide()
-TWP.scan:SetScript("OnShow", function()
-    this.startTime = GetTime()
-end)
+TWP.scan:SetScript("OnShow", function() this.startTime = GetTime() end)
 
 TWP.scan:SetScript("OnUpdate", function()
-    local plus = 0.1 --seconds
+    local plus = 0.1
     local gt = GetTime() * 1000
     local st = (this.startTime + plus) * 1000
     if gt >= st then
-
         local maxSpells = 500
         local id = 0
         while (id <= maxSpells) do
             id = id + 1
             local spellName = GetSpellName(id, BOOKTYPE_SPELL)
-
-            if (spellName) then
+            if spellName then
                 local start, duration, enabled = GetSpellCooldown(id, BOOKTYPE_SPELL)
                 local cd = start + duration - GetTime()
                 if cd > 1.7 then
@@ -69,7 +80,6 @@ TWP.scan:SetScript("OnUpdate", function()
             if spellId then
                 local start, duration, enabled = GetSpellCooldown(spellId, BOOKTYPE_SPELL)
                 local cd = start + duration - GetTime()
-
                 if cd <= 0 then
                     TWP.tracked[name] = nil
                     local tEx = string.split(GetSpellTexture(spellId, BOOKTYPE_SPELL), "\\")
@@ -93,42 +103,27 @@ TWP.animateQueue = {}
 TWP.animation = CreateFrame("Frame")
 TWP.animation:Hide()
 
-TWP.animation:SetScript("OnShow", function()
-    this.startTime = GetTime()
-end)
-
-TWP.animation:SetScript("OnHide", function()
-end)
-
+TWP.animation:SetScript("OnShow", function() this.startTime = GetTime() end)
 TWP.animation:SetScript("OnUpdate", function()
-    local plus = 0.01 --seconds
+    local plus = 0.01
     local gt = GetTime() * 1000
     local st = (this.startTime + plus) * 1000
     if gt >= st then
-
         local baseSize = TWP.defaults and TWP.defaults.size or 100
-
         for tex, alpha in next, TWP.animateQueue do
             if alpha then
                 if not TWP.animationFrames[tex] then
                     TWP.animationFrames[tex] = CreateFrame("Frame", "TWP_" .. tex, TWPulse, "TWPulseTemplate")
                 end
-
                 local frame = _G["TWP_" .. tex]
                 local icon = _G["TWP_" .. tex .. "Icon"]
-
                 icon:SetTexture("Interface\\Icons\\" .. tex)
                 frame:Show()
                 frame:SetAlpha(alpha)
-
-                -- Animation pulse: taille = baseSize * (alpha + 0.5) pour effet de zoom
                 local scale = alpha + 0.5
                 icon:SetWidth(baseSize * scale)
                 icon:SetHeight(baseSize * scale)
-
-                -- Décrémente l'alpha
                 TWP.animateQueue[tex] = TWP.animateQueue[tex] - 0.02
-
                 if TWP.animateQueue[tex] <= 0 then
                     frame:SetAlpha(0)
                     icon:SetWidth(baseSize)
@@ -145,7 +140,6 @@ TWP.animation:SetScript("OnUpdate", function()
                 TWPulse:Hide()
             end
         end
-
         this.startTime = GetTime()
     end
 end)
@@ -154,25 +148,20 @@ end)
 -- Slash Commands
 -------------------------------------------------
 TWP.locked = true
-
 SLASH_TWPLOCK1 = "/twplock"
-SlashCmdList["TWPLOCK"] = function(cmd)
-    if cmd then
-        TWP.locked = true
-        TWPulseUnlock:Hide()
-        TWPulse:Hide()
-        TWPulse:EnableMouse(false)
-    end
+SlashCmdList["TWPLOCK"] = function()
+    TWP.locked = true
+    TWPulseUnlock:Hide()
+    TWPulse:Hide()
+    TWPulse:EnableMouse(false)
 end
 
 SLASH_TWPUNLOCK1 = "/twpunlock"
-SlashCmdList["TWPUNLOCK"] = function(cmd)
-    if cmd then
-        TWP.locked = false
-        TWPulseUnlock:Show()
-        TWPulse:Show()
-        TWPulse:EnableMouse(true)
-    end
+SlashCmdList["TWPUNLOCK"] = function()
+    TWP.locked = false
+    TWPulseUnlock:Show()
+    TWPulse:Show()
+    TWPulse:EnableMouse(true)
 end
 
 -------------------------------------------------
@@ -180,9 +169,7 @@ end
 -------------------------------------------------
 function _tablesize(t)
     local size = 0
-    for i in t do
-        size = size + 1
-    end
+    for i in t do size = size + 1 end
     return size
 end
 
@@ -199,7 +186,6 @@ function string:split(delimiter)
     return result
 end
 
-
 -------------------------------------------------
 -- Options Frame
 -------------------------------------------------
@@ -210,15 +196,10 @@ TWPOptions:SetPoint("CENTER", UIParent, "CENTER")
 TWPOptions:EnableMouse(true)
 TWPOptions:SetMovable(true)
 TWPOptions:RegisterForDrag("LeftButton")
-TWPOptions:SetClampedToScreen(true)  -- Empêche de la sortir de l'écran
+TWPOptions:SetClampedToScreen(true)
 
-TWPOptions:SetScript("OnDragStart", function(self)
-    this:StartMoving()
-end)
-
-TWPOptions:SetScript("OnDragStop", function(self)
-    this:StopMovingOrSizing()
-end)
+TWPOptions:SetScript("OnDragStart", function(self) this:StartMoving() end)
+TWPOptions:SetScript("OnDragStop", function(self) this:StopMovingOrSizing() end)
 TWPOptions:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
     edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -235,12 +216,9 @@ TWPOptions.title:SetText("TWPulse Options")
 -- Checkbox Lock
 local lockCheck = CreateFrame("CheckButton", "TWPOptionsLockCheck", TWPOptions, "UICheckButtonTemplate")
 lockCheck:SetPoint("TOPLEFT", 20, -60)
-lockCheck:SetWidth(24)
-lockCheck:SetHeight(24)
 lockCheck.text = lockCheck:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 lockCheck.text:SetPoint("LEFT", lockCheck, "RIGHT", 4, 0)
 lockCheck.text:SetText("Lock Pulse Frame")
-
 lockCheck:SetScript("OnClick", function(self)
     if this:GetChecked() then
         TWP.locked = true
@@ -255,7 +233,7 @@ lockCheck:SetScript("OnClick", function(self)
     end
 end)
 
-
+-- Slider Taille
 -- Slider Taille
 local sizeSlider = CreateFrame("Slider", "TWPOptionsSizeSlider", TWPOptions, "OptionsSliderTemplate")
 sizeSlider:SetWidth(200)
@@ -263,7 +241,9 @@ sizeSlider:SetHeight(16)
 sizeSlider:SetPoint("TOP", 0, -120)
 sizeSlider:SetMinMaxValues(40, 200)
 sizeSlider:SetValueStep(5)
-sizeSlider:SetValue(TWP.defaults and TWP.defaults.size or 100)
+
+-- Valeur initiale depuis la SaveVariable ou par défaut
+sizeSlider:SetValue(TWPB_P or (TWP.defaults and TWP.defaults.size) or 100)
 
 TWPOptionsSizeSliderLow:SetText("40")
 TWPOptionsSizeSliderHigh:SetText("200")
@@ -273,6 +253,9 @@ sizeSlider:SetScript("OnValueChanged", function(self)
     local val = this:GetValue()
     if not TWP.defaults then TWP.defaults = {} end
     TWP.defaults.size = val
+
+    -- Sauvegarde dans la SaveVariable
+    TWPB_P = val
 
     -- Redimensionne le pulse principal
     TWPulse:SetWidth(val)
@@ -302,9 +285,7 @@ closeBtn:SetWidth(80)
 closeBtn:SetHeight(22)
 closeBtn:SetPoint("BOTTOM", 0, 20)
 closeBtn:SetText("Fermer")
-closeBtn:SetScript("OnClick", function()
-    TWPOptions:Hide()
-end)
+closeBtn:SetScript("OnClick", function() TWPOptions:Hide() end)
 
 -------------------------------------------------
 -- Slash Command /twp
@@ -314,7 +295,6 @@ SlashCmdList["TWPOPTIONS"] = function(msg)
     if TWPOptions:IsShown() then
         TWPOptions:Hide()
     else
-        -- refresh checkbox & slider on open
         lockCheck:SetChecked(TWP.locked)
         sizeSlider:SetValue(TWP.defaults and TWP.defaults.size or 100)
         TWPOptions:Show()

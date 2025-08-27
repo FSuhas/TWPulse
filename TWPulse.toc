@@ -3,5 +3,7 @@
 ## Author: Xerron / Er / Gondoleon  
 ## Version: 2.0
 ## Notes: Cooldown Pulse
-# SavedVariables: TWPB_HP, TWPB_P
+## SavedVariables: TWPB_HP, TWPB_P
+
 TWPulse.xml
+TWPulse.lua
