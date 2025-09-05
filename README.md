@@ -22,6 +22,14 @@ Displays a pulse animation for spells when their cooldown is finished. Allows vi
 
 ---
 
+## Illustration
+
+Pulse animation              |  Settings windows
+:---------------------------:|:-------------------------:
+![animation](animation.GIF)  |  ![settings](settings.PNG)
+
+---
+
 ## Commandes Slash / Slash Commands
 
 - `/twp` – Ouvre/ferme le menu d’options.  
