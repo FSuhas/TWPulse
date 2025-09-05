@@ -1,7 +1,7 @@
 ## Interface: 11200
 ## Title: TW Pulse
 ## Author: Xerron / Er / Gondoleon  
-## Version: 2.1
+## Version: 2.2
 ## Notes: Cooldown Pulse
 ## SavedVariables: TWPB_HP, TWPB_P
 
