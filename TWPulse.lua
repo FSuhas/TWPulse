@@ -33,15 +33,27 @@ local function TableSize(t)
     return size
 end
 
-local function SplitTexturePath(path)
-    local tex
-    local lastSlash = strfind(path, "\\[^\\]*$")
-    if lastSlash then
-        tex = strsub(path, lastSlash + 1)
-    else
-        tex = path
+function string:split(delimiter)
+    local result = {}
+    local from = 1
+    local delim_from, delim_to = string.find(self, delimiter, from)
+    while delim_from do
+        table.insert(result, string.sub(self, from, delim_from - 1))
+        from = delim_to + 1
+        delim_from, delim_to = string.find(self, delimiter, from)
     end
-    return tex
+    table.insert(result, string.sub(self, from))
+    return result
+end
+
+local function GetTotalSpells()
+    local total = 0
+    local tabs = GetNumSpellTabs()
+    for i = 1, tabs do
+        local _, _, offset, numSpells = GetSpellTabInfo(i)
+        total = total + numSpells
+    end
+    return total
 end
 
 -------------------------------------------------
@@ -57,6 +69,8 @@ TWP:SetScript("OnEvent", function()
         TWPulse:SetPoint("CENTER", UIParent, "CENTER", TWPB_X, TWPB_Y)
         TWPulse:SetWidth(size)
         TWPulse:SetHeight(size)
+        TWPulse:SetScript("OnDragStart", function() this:StartMoving() end)
+        TWPulse:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
 
         if TWPulseUnlock then
             TWPulseUnlock:ClearAllPoints()
@@ -84,39 +98,42 @@ end)
 -------------------------------------------------
 TWP.tracked = {}
 
-local function GetTotalSpells()
-    local total = 0
-    local tabs = GetNumSpellTabs()
-    for i = 1, tabs do
-        local _, _, offset, numSpells = GetSpellTabInfo(i)
-        total = total + numSpells
-    end
-    return total
-end
-
 TWP.scan = CreateFrame("Frame")
 TWP.scan:Hide()
 TWP.scan:SetScript("OnShow", function() this.startTime = GetTime() end)
 
 TWP.scan:SetScript("OnUpdate", function()
-    if GetTime() - this.startTime >= 0.1 then
-        local maxSpells = GetTotalSpells()
-        for id = 1, maxSpells do
-            local spellName = GetSpellName(id, BOOKTYPE_SPELL)
+    local plus = 0.1 --seconds
+    local gt = GetTime() * 1000
+    local st = (this.startTime + plus) * 1000
+    if gt >= st then
+
+        local maxSpells = 500;
+        local id = 0;
+        while (id <= maxSpells) do
+            id = id + 1;
+            local spellName = GetSpellName(id, BOOKTYPE_SPELL);
+
+
             if spellName then
                 local start, duration = GetSpellCooldown(id, BOOKTYPE_SPELL)
-                if start + duration - GetTime() > 1.7 then
+                local cd = start + duration - GetTime()
+                if cd > 1.7 then
                     TWP.tracked[spellName] = id
                 end
             end
         end
 
         for name, spellId in next, TWP.tracked do
-            local start, duration = GetSpellCooldown(spellId, BOOKTYPE_SPELL)
-            if start + duration - GetTime() <= 0 then
-                TWP.tracked[name] = nil
-                local tex = SplitTexturePath(GetSpellTexture(spellId, BOOKTYPE_SPELL))
-                TWP.QueuePulse(tex)
+            if spellId then
+                local start, duration = GetSpellCooldown(spellId, BOOKTYPE_SPELL)
+                local cd = start + duration - GetTime()
+                if cd <= 0 then
+                    TWP.tracked[name] = nil
+                    local tEx = string.split(GetSpellTexture(spellId, BOOKTYPE_SPELL), '\\')
+                    local tex = tEx[table.getn(tEx)]
+                    TWP.QueuePulse(tex)
+                end
             end
         end
 
@@ -144,6 +161,7 @@ local function GetPulseFrame(tex)
 end
 
 function TWP.QueuePulse(tex)
+    if TWP.animateQueue[tex] then return end -- protection doublon
     local frame = GetPulseFrame(tex)
     frame.icon:SetTexture("Interface\\Icons\\"..tex)
     frame:SetAlpha(1)
@@ -187,11 +205,15 @@ TWP.animation:SetScript("OnUpdate", function()
         if TWP.locked then
             if TableSize(TWP.animateQueue) > 0 then
                 TWPulse:Show()
+                TWPulse:SetScript("OnDragStart", function() this:StartMoving() end)
+                TWPulse:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
             else
                 TWPulse:Hide()
             end
         else
             TWPulse:Show()
+            TWPulse:SetScript("OnDragStart", function() this:StartMoving() end)
+            TWPulse:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
         end
 
         this.startTime = GetTime()
@@ -209,8 +231,8 @@ TWPOptions:EnableMouse(true)
 TWPOptions:SetMovable(true)
 TWPOptions:RegisterForDrag("LeftButton")
 TWPOptions:SetClampedToScreen(true)
-TWPOptions:SetScript("OnDragStart", function(self) this:StartMoving() end)
-TWPOptions:SetScript("OnDragStop", function(self) this:StopMovingOrSizing() end)
+TWPOptions:SetScript("OnDragStart", function() this:StartMoving() end)
+TWPOptions:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
 TWPOptions:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
     edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -230,7 +252,7 @@ lockCheck:SetPoint("TOPLEFT", 20, -60)
 lockCheck.text = lockCheck:CreateFontString(nil,"OVERLAY","GameFontNormal")
 lockCheck.text:SetPoint("LEFT", lockCheck, "RIGHT",25,0)
 lockCheck.text:SetText("Lock Pulse Frame")
-lockCheck:SetScript("OnClick", function(self)
+lockCheck:SetScript("OnClick", function()
     if this:GetChecked() then
         TWP.locked = true
         TWPulseUnlock:Hide()
@@ -245,6 +267,7 @@ lockCheck:SetScript("OnClick", function(self)
 end)
 
 -- Slider Taille
+-- Slider Taille
 local sizeSlider = CreateFrame("Slider", "TWPOptionsSizeSlider", TWPOptions, "OptionsSliderTemplate")
 sizeSlider:SetWidth(200)
 sizeSlider:SetHeight(16)
@@ -253,9 +276,19 @@ sizeSlider:SetMinMaxValues(40,200)
 sizeSlider:SetValueStep(5)
 sizeSlider:SetValue(TWPB_P or TWP.defaults.size)
 
-TWPOptionsSizeSliderLow:SetText("40")
-TWPOptionsSizeSliderHigh:SetText("200")
-TWPOptionsSizeSliderText:SetText("Icon Size")
+-- Créer les textes Low/High et Label manuellement
+if sizeSlider.Low then sizeSlider.Low:Hide() end
+if sizeSlider.High then sizeSlider.High:Hide() end
+sizeSlider.LowText = sizeSlider:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+sizeSlider.LowText:SetPoint("LEFT", sizeSlider, "LEFT", -10, 0)
+sizeSlider.LowText:SetText("40")
+sizeSlider.HighText = sizeSlider:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+sizeSlider.HighText:SetPoint("RIGHT", sizeSlider, "RIGHT", 10, 0)
+sizeSlider.HighText:SetText("200")
+sizeSlider.Label = sizeSlider:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+sizeSlider.Label:SetPoint("BOTTOM", sizeSlider, "TOP", 0, 2)
+sizeSlider.Label:SetText("Icon Size")
+
 
 sizeSlider:SetScript("OnValueChanged", function()
     local val = this:GetValue()
@@ -266,6 +299,11 @@ sizeSlider:SetScript("OnValueChanged", function()
     if TWPulseUnlock then
         TWPulseUnlock:SetWidth(val)
         TWPulseUnlock:SetHeight(val)
+    end
+    -- update pulses actifs
+    for _, frame in next, TWP.animationFrames do
+        frame.icon:SetWidth(val)
+        frame.icon:SetHeight(val)
     end
 end)
 
@@ -286,7 +324,6 @@ resetBtn:SetScript("OnClick", function()
         TWPulseUnlock:SetWidth(100)
         TWPulseUnlock:SetHeight(100)
     end
-
     -- Reset position
     TWPB_X = 0
     TWPB_Y = 0
