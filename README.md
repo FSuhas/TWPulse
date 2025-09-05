@@ -23,9 +23,10 @@ Displays a pulse animation for spells when their cooldown is finished. Allows vi
 ---
 
 ## Illustration
-![animaton](animation.GIF)
 
-![settings](settings.PNG)
+Pulse animation              |  Settings windows
+:---------------------------:|:-------------------------:
+![animation](animation.GIF)  |  ![settings](settings.PNG)
 
 ---
 
