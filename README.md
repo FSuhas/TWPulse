@@ -24,9 +24,7 @@ Displays a pulse animation for spells when their cooldown is finished. Allows vi
 
 ## Illustration
 
-Pulse animation              |  Settings windows
-:---------------------------:|:-------------------------:
-![animation](animation.GIF)  |  ![settings](settings.PNG)
+<img src="https://raw.githubusercontent.com/FSuhas/TWPulse/main/animation.GIF" width="45%"> <img src="https://raw.githubusercontent.com/FSuhas/TWPulse/main/settings.PNG" width="45%">
 
 ---
 
@@ -83,3 +81,4 @@ Pulse animation              |  Settings windows
   Does not modify game functionality, only cooldown display.  
 - Les icônes sont générées dynamiquement en fonction des sorts suivis.  
   Icons are dynamically generated according to tracked spells.  
+
